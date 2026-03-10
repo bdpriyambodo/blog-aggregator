@@ -11,6 +11,44 @@ type Config struct {
 	CurrentUserName string `json:"current_user_name"`
 }
 
+type State struct {
+	ConfigPointer *Config
+}
+
+type Command struct {
+	Name string
+	Args []string
+}
+
+type Commands struct {
+	Handlers map[string]func(*State, Command) error
+}
+
+func (c Commands) Run(s *State, cmd Command) error {
+	handler, exists := c.Handlers[cmd.Name]
+	if !exists {
+		return fmt.Errorf("Unknown command: %s", cmd.Name)
+	}
+	return handler(s, cmd)
+}
+
+func (c *Commands) Register(name string, f func(*State, Command) error) {
+	c.Handlers[name] = f
+}
+
+func HandlerLogin(s *State, cmd Command) error {
+	if len(cmd.Args) == 0 {
+		return fmt.Errorf("Empty handlers/argument")
+	}
+
+	(s.ConfigPointer).SetUser(cmd.Args[0])
+
+	fmt.Println("The user has been set!")
+
+	return nil
+
+}
+
 const configFileName = ".gatorconfig.json"
 
 func Read() *Config {
@@ -44,13 +82,17 @@ func Read() *Config {
 
 }
 
-func (c *Config) SetUser() {
-	c.CurrentUserName = "prymbd"
+func (c *Config) SetUser(username string) error {
+	// c.CurrentUserName = "prymbd"
+	c.CurrentUserName = username
 
 	err := write(*c)
 	if err != nil {
 		fmt.Println("Error - writing function", err)
+		return err
 	}
+
+	return nil
 }
 
 func write(cfg Config) error {
