@@ -35,6 +35,7 @@ func main() {
 
 	c.Register("login", config.HandlerLogin)
 	c.Register("register", config.HandlerRegister)
+	c.Register("reset", config.HandlerReset)
 
 	// ACTUAL RUN
 	userArgs := os.Args
@@ -42,23 +43,27 @@ func main() {
 		fmt.Println(i, arg)
 	}
 
-	if len(userArgs) < 2 {
-		fmt.Println("Not enough argument")
-		os.Exit(1)
+	if os.Args[1] != "reset" {
+		if len(userArgs) < 2 {
+			fmt.Println("Not enough argument")
+			os.Exit(1)
+		}
+
+		if len(userArgs) < 3 {
+			fmt.Println("Username required")
+			os.Exit(1)
+		}
+
+		cmd := config.Command{
+			Name: userArgs[1],
+			Args: userArgs[2:],
+		}
+
+		fmt.Printf("Command name: %s\n", cmd.Name)
+		fmt.Printf("Command argument: %s\n", cmd.Args)
+		c.Run(&s, cmd)
+	} else {
+		c.Run(&s, config.Command{Name: "reset"})
 	}
 
-	if len(userArgs) < 3 {
-		fmt.Println("Username required")
-		os.Exit(1)
-	}
-
-	cmd := config.Command{
-		Name: userArgs[1],
-		Args: userArgs[2:],
-	}
-
-	fmt.Printf("Command name: %s\n", cmd.Name)
-	fmt.Printf("Command argument: %s\n", cmd.Args)
-
-	c.Run(&s, cmd)
 }

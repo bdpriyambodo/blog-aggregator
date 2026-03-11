@@ -66,13 +66,13 @@ func HandlerLogin(s *State, cmd Command) error {
 }
 
 func HandlerRegister(s *State, cmd Command) error {
-	fmt.Println("1")
+	// fmt.Println("1")
 
 	if len(cmd.Args) == 0 {
 		return fmt.Errorf("Empty handlers/argument")
 	}
 
-	fmt.Println("2")
+	// fmt.Println("2")
 
 	inputName := cmd.Args[0]
 
@@ -102,6 +102,15 @@ func HandlerRegister(s *State, cmd Command) error {
 	fmt.Printf("Created at: %v\n", user.CreatedAt.Time)
 	fmt.Printf("Updated at: %v\n", user.UpdatedAt.Time)
 	fmt.Printf("Name: %s\n", user.Name)
+
+	return nil
+}
+
+func HandlerReset(s *State, cmd Command) error {
+	err := s.DataBase.DeleteAllUsers(context.Background())
+	if err != nil {
+		fmt.Printf("Error in deleting all users from table: %s\n", err)
+	}
 
 	return nil
 }
