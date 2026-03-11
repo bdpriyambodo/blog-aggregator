@@ -1,9 +1,16 @@
 package config
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
+
+	"database/sql"
+
+	"github.com/bdpriyambodo/blog-aggregator/internal/database"
+	"github.com/google/uuid"
 )
 
 type Config struct {
@@ -13,6 +20,7 @@ type Config struct {
 
 type State struct {
 	ConfigPointer *Config
+	DataBase      *database.Queries
 }
 
 type Command struct {
@@ -41,12 +49,61 @@ func HandlerLogin(s *State, cmd Command) error {
 		return fmt.Errorf("Empty handlers/argument")
 	}
 
+	inputName := cmd.Args[0]
+
+	_, err := s.DataBase.GetUser(context.Background(), inputName)
+	if err != nil {
+		fmt.Println("User not exist")
+		os.Exit(1)
+	}
+
 	(s.ConfigPointer).SetUser(cmd.Args[0])
 
 	fmt.Println("The user has been set!")
 
 	return nil
 
+}
+
+func HandlerRegister(s *State, cmd Command) error {
+	fmt.Println("1")
+
+	if len(cmd.Args) == 0 {
+		return fmt.Errorf("Empty handlers/argument")
+	}
+
+	fmt.Println("2")
+
+	inputName := cmd.Args[0]
+
+	var userParams database.CreateUserParams
+	userParams.ID = uuid.New()
+	userParams.CreatedAt = sql.NullTime{Time: time.Now(), Valid: true}
+	userParams.UpdatedAt = sql.NullTime{Time: time.Now(), Valid: true}
+	userParams.Name = inputName
+
+	_, err := s.DataBase.GetUser(context.Background(), inputName)
+	if err == nil {
+		fmt.Println("User already exist")
+		os.Exit(1)
+	}
+
+	_, err = s.DataBase.CreateUser(context.Background(), userParams)
+	if err != nil {
+		fmt.Printf("Error in creating user: %s\n", err)
+		return err
+	}
+
+	s.ConfigPointer.SetUser(inputName)
+
+	fmt.Println("User has been created")
+	user, err := s.DataBase.GetUser(context.Background(), inputName)
+	fmt.Printf("UUID: %s\n", user.ID.String())
+	fmt.Printf("Created at: %v\n", user.CreatedAt.Time)
+	fmt.Printf("Updated at: %v\n", user.UpdatedAt.Time)
+	fmt.Printf("Name: %s\n", user.Name)
+
+	return nil
 }
 
 const configFileName = ".gatorconfig.json"
