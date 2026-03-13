@@ -115,6 +115,25 @@ func HandlerReset(s *State, cmd Command) error {
 	return nil
 }
 
+func HandlerGetUsers(s *State, cmd Command) error {
+	users, err := s.DataBase.GetUsers(context.Background())
+	if err != nil {
+		fmt.Printf("Error in getting all users from table: %s\n", err)
+	}
+
+	// fmt.Printf("current username: %s\n", s.ConfigPointer.CurrentUserName)
+
+	for _, user := range users {
+		if user != s.ConfigPointer.CurrentUserName {
+			fmt.Printf(" * %s\n", user)
+		} else {
+			fmt.Printf(" * %s (current)\n", user)
+		}
+	}
+
+	return nil
+}
+
 const configFileName = ".gatorconfig.json"
 
 func Read() *Config {
