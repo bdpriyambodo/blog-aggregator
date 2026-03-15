@@ -37,6 +37,7 @@ func main() {
 	c.Register("register", config.HandlerRegister)
 	c.Register("reset", config.HandlerReset)
 	c.Register("users", config.HandlerGetUsers)
+	c.Register("agg", config.HandlerAgg)
 
 	// ACTUAL RUN
 	userArgs := os.Args
@@ -45,7 +46,7 @@ func main() {
 	}
 
 	arg1 := os.Args[1]
-	if arg1 != "reset" && arg1 != "users" {
+	if arg1 != "reset" && arg1 != "users" && arg1 != "agg" {
 		if len(userArgs) < 2 {
 			fmt.Println("Not enough argument")
 			os.Exit(1)

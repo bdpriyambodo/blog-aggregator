@@ -10,6 +10,8 @@ import (
 	"database/sql"
 
 	"github.com/bdpriyambodo/blog-aggregator/internal/database"
+	"github.com/bdpriyambodo/blog-aggregator/internal/xmlfetcher"
+
 	"github.com/google/uuid"
 )
 
@@ -130,6 +132,20 @@ func HandlerGetUsers(s *State, cmd Command) error {
 			fmt.Printf(" * %s (current)\n", user)
 		}
 	}
+
+	return nil
+}
+
+func HandlerAgg(s *State, cmd Command) error {
+	feedURL := "https://www.wagslane.dev/index.xml"
+	ctx := context.Background()
+	rss_ptr, err := xmlfetcher.FetchFeed(ctx, feedURL)
+	if err != nil {
+		fmt.Println("Error in fetching feed: ", err)
+		return err
+	}
+
+	fmt.Printf("%+v\n", rss_ptr)
 
 	return nil
 }
