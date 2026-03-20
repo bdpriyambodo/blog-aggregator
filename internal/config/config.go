@@ -150,6 +150,42 @@ func HandlerAgg(s *State, cmd Command) error {
 	return nil
 }
 
+func HandlerAddFeed(s *State, cmd Command) error {
+
+	ctx := context.Background()
+
+	currentUser := s.ConfigPointer.CurrentUserName
+	currentUserData, err := s.DataBase.GetUser(context.Background(), currentUser)
+	if err != nil {
+		fmt.Println("Current user not exist")
+		os.Exit(1)
+	}
+
+	var feedArg database.CreateFeedParams
+
+	feedArg.ID = uuid.New()
+	feedArg.CreatedAt = sql.NullTime{Time: time.Now(), Valid: true}
+	feedArg.UpdatedAt = sql.NullTime{Time: time.Now(), Valid: true}
+	feedArg.Name = sql.NullString{String: cmd.Args[0], Valid: true}
+	feedArg.Url = sql.NullString{String: cmd.Args[1], Valid: true}
+	feedArg.UserID = uuid.NullUUID{UUID: currentUserData.ID, Valid: true}
+
+	resultFeed, err := s.DataBase.CreateFeed(ctx, feedArg)
+	if err != nil {
+		fmt.Println("Error in adding feed: ", err)
+		return err
+	}
+
+	fmt.Printf("ID: %v\n", resultFeed.ID)
+	fmt.Printf("CreatedAt: %v (Valid: %v)\n", resultFeed.CreatedAt.Time, resultFeed.CreatedAt.Valid)
+	fmt.Printf("UpdatedAt: %v (Valid: %v)\n", resultFeed.UpdatedAt.Time, resultFeed.UpdatedAt.Valid)
+	fmt.Printf("Name: %s (Valid: %v)\n", resultFeed.Name.String, resultFeed.Name.Valid)
+	fmt.Printf("Url: %s (Valid: %v)\n", resultFeed.Url.String, resultFeed.Url.Valid)
+	fmt.Printf("UserID: %v (Valid: %v)\n", resultFeed.UserID.UUID, resultFeed.UserID.Valid)
+
+	return nil
+}
+
 const configFileName = ".gatorconfig.json"
 
 func Read() *Config {
