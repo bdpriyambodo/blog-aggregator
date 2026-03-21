@@ -39,6 +39,7 @@ func main() {
 	c.Register("users", config.HandlerGetUsers)
 	c.Register("agg", config.HandlerAgg)
 	c.Register("addfeed", config.HandlerAddFeed)
+	c.Register("feeds", config.HandlerFeeds)
 
 	// ACTUAL RUN
 	userArgs := os.Args
@@ -60,7 +61,7 @@ func main() {
 
 		c.Run(&s, cmd)
 
-	} else if arg1 != "reset" && arg1 != "users" && arg1 != "agg" {
+	} else if arg1 != "reset" && arg1 != "users" && arg1 != "agg" && arg1 != "feeds" {
 		if len(userArgs) < 2 {
 			fmt.Println("Not enough argument")
 			os.Exit(1)

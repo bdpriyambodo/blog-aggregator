@@ -17,4 +17,7 @@ SELECT * FROM feeds WHERE name = $1;
 DELETE from feeds;
 
 -- name: GetFeeds :many
-SELECT name from feeds;
+SELECT feeds.name, feeds.url, users.name
+from feeds
+left join users 
+on feeds.user_id = users.id;

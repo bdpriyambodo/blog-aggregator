@@ -83,22 +83,31 @@ func (q *Queries) GetFeed(ctx context.Context, name sql.NullString) (Feed, error
 }
 
 const getFeeds = `-- name: GetFeeds :many
-SELECT name from feeds
+SELECT feeds.name, feeds.url, users.name
+from feeds
+left join users 
+on feeds.user_id = users.id
 `
 
-func (q *Queries) GetFeeds(ctx context.Context) ([]sql.NullString, error) {
+type GetFeedsRow struct {
+	Name   sql.NullString
+	Url    sql.NullString
+	Name_2 sql.NullString
+}
+
+func (q *Queries) GetFeeds(ctx context.Context) ([]GetFeedsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getFeeds)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []sql.NullString
+	var items []GetFeedsRow
 	for rows.Next() {
-		var name sql.NullString
-		if err := rows.Scan(&name); err != nil {
+		var i GetFeedsRow
+		if err := rows.Scan(&i.Name, &i.Url, &i.Name_2); err != nil {
 			return nil, err
 		}
-		items = append(items, name)
+		items = append(items, i)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err

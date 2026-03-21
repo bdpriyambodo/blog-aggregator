@@ -186,6 +186,24 @@ func HandlerAddFeed(s *State, cmd Command) error {
 	return nil
 }
 
+func HandlerFeeds(s *State, cmd Command) error {
+	ctx := context.Background()
+	resultFeeds, err := s.DataBase.GetFeeds(ctx)
+	if err != nil {
+		fmt.Println("Error in retrieving feeds")
+		os.Exit(1)
+	}
+
+	for _, feed := range resultFeeds {
+		fmt.Printf("Feed name: %v\n", feed.Name)
+		fmt.Printf("Feed URL: %v\n", feed.Url)
+		fmt.Printf("User name: %v\n", feed.Name_2)
+		fmt.Printf("\n")
+	}
+
+	return nil
+}
+
 const configFileName = ".gatorconfig.json"
 
 func Read() *Config {
