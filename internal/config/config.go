@@ -176,12 +176,29 @@ func HandlerAddFeed(s *State, cmd Command) error {
 		return err
 	}
 
+	// PRINTING
 	fmt.Printf("ID: %v\n", resultFeed.ID)
 	fmt.Printf("CreatedAt: %v (Valid: %v)\n", resultFeed.CreatedAt.Time, resultFeed.CreatedAt.Valid)
 	fmt.Printf("UpdatedAt: %v (Valid: %v)\n", resultFeed.UpdatedAt.Time, resultFeed.UpdatedAt.Valid)
 	fmt.Printf("Name: %s (Valid: %v)\n", resultFeed.Name.String, resultFeed.Name.Valid)
 	fmt.Printf("Url: %s (Valid: %v)\n", resultFeed.Url.String, resultFeed.Url.Valid)
 	fmt.Printf("UserID: %v (Valid: %v)\n", resultFeed.UserID.UUID, resultFeed.UserID.Valid)
+
+	fmt.Println("Finished adding feed")
+
+	// CREATE FEED FOLLOW RECORD
+	var feedFollowArg database.CreateFeedFollowParams
+	feedFollowArg.ID = uuid.New()
+	feedFollowArg.CreatedAt = sql.NullTime{Time: time.Now(), Valid: true}
+	feedFollowArg.UpdatedAt = sql.NullTime{Time: time.Now(), Valid: true}
+	feedFollowArg.UserID = uuid.NullUUID{UUID: currentUserData.ID, Valid: true}
+	feedFollowArg.FeedID = uuid.NullUUID{UUID: feedArg.ID, Valid: true}
+	result, err := s.DataBase.CreateFeedFollow(ctx, feedFollowArg)
+	if err != nil {
+		fmt.Println("Error in feed follow")
+		os.Exit(1)
+	}
+	fmt.Printf("Feed name: %v - Current user: %v", result.FeedName.String, result.UserName)
 
 	return nil
 }
@@ -199,6 +216,76 @@ func HandlerFeeds(s *State, cmd Command) error {
 		fmt.Printf("Feed URL: %v\n", feed.Url)
 		fmt.Printf("User name: %v\n", feed.Name_2)
 		fmt.Printf("\n")
+	}
+
+	return nil
+}
+
+func HandlerFollow(s *State, cmd Command) error {
+	ctx := context.Background()
+
+	// CHECK URL
+	url := sql.NullString{
+		String: cmd.Args[0],
+		Valid:  true,
+	}
+	feed, err := s.DataBase.GetFeedUrl(ctx, url)
+
+	if err != nil {
+		fmt.Print("Error in retrieving feed")
+		os.Exit(1)
+	}
+
+	// CHECK CURRENT USER
+
+	currentUser := s.ConfigPointer.CurrentUserName
+	currentUserData, err := s.DataBase.GetUser(context.Background(), currentUser)
+	if err != nil {
+		fmt.Println("Current user not exist")
+		os.Exit(1)
+	}
+
+	//
+	var feedFollowArg database.CreateFeedFollowParams
+
+	feedFollowArg.ID = uuid.New()
+	feedFollowArg.CreatedAt = sql.NullTime{Time: time.Now(), Valid: true}
+	feedFollowArg.UpdatedAt = sql.NullTime{Time: time.Now(), Valid: true}
+	feedFollowArg.UserID = uuid.NullUUID{UUID: currentUserData.ID, Valid: true}
+	feedFollowArg.FeedID = uuid.NullUUID{UUID: feed.ID, Valid: true}
+
+	result, err := s.DataBase.CreateFeedFollow(ctx, feedFollowArg)
+	if err != nil {
+		fmt.Println("Error in feed follow")
+		os.Exit(1)
+	}
+
+	fmt.Printf("Feed name: %v - Current user: %v", result.FeedName.String, result.UserName)
+	return nil
+}
+
+func HandlerFollowing(s *State, cmd Command) error {
+	ctx := context.Background()
+
+	// CHECK CURRENT USER
+	currentUser := s.ConfigPointer.CurrentUserName
+	currentUserData, err := s.DataBase.GetUser(context.Background(), currentUser)
+	if err != nil {
+		fmt.Println("Current user not exist")
+		os.Exit(1)
+	}
+
+	//
+	result, nil := s.DataBase.GetFeedFollowsForUser(ctx, currentUserData.Name)
+	if err != nil {
+		fmt.Println("Error in Following")
+		os.Exit(1)
+	}
+
+	// PRINT
+	fmt.Printf("Current user (%v) follows:\n", currentUserData.Name)
+	for _, feed := range result {
+		fmt.Printf("- %v", feed.Name_2.String)
 	}
 
 	return nil

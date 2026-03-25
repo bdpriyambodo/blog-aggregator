@@ -40,6 +40,8 @@ func main() {
 	c.Register("agg", config.HandlerAgg)
 	c.Register("addfeed", config.HandlerAddFeed)
 	c.Register("feeds", config.HandlerFeeds)
+	c.Register("follow", config.HandlerFollow)
+	c.Register("following", config.HandlerFollowing)
 
 	// ACTUAL RUN
 	userArgs := os.Args
@@ -61,7 +63,8 @@ func main() {
 
 		c.Run(&s, cmd)
 
-	} else if arg1 != "reset" && arg1 != "users" && arg1 != "agg" && arg1 != "feeds" {
+	} else if arg1 != "reset" && arg1 != "users" && arg1 != "agg" && arg1 != "feeds" && arg1 != "following" {
+		// FOR COMMANDS THAT NEED ARGUMENT (APART FROM addfeed), NEED 1 COMMAND AND 1 ARGUMENT
 		if len(userArgs) < 2 {
 			fmt.Println("Not enough argument")
 			os.Exit(1)
@@ -81,6 +84,7 @@ func main() {
 		fmt.Printf("Command argument: %s\n", cmd.Args)
 		c.Run(&s, cmd)
 	} else {
+		// FOR COMMANDS THAT DO NOT NEED ANY ARGUMENT
 		c.Run(&s, config.Command{Name: arg1})
 	}
 
