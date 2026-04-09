@@ -150,16 +150,16 @@ func HandlerAgg(s *State, cmd Command) error {
 	return nil
 }
 
-func HandlerAddFeed(s *State, cmd Command) error {
+func HandlerAddFeed(s *State, cmd Command, user database.User) error {
 
 	ctx := context.Background()
 
-	currentUser := s.ConfigPointer.CurrentUserName
-	currentUserData, err := s.DataBase.GetUser(context.Background(), currentUser)
-	if err != nil {
-		fmt.Println("Current user not exist")
-		os.Exit(1)
-	}
+	// currentUser := s.ConfigPointer.CurrentUserName
+	// currentUserData, err := s.DataBase.GetUser(context.Background(), currentUser)
+	// if err != nil {
+	// 	fmt.Println("Current user not exist")
+	// 	os.Exit(1)
+	// }
 
 	var feedArg database.CreateFeedParams
 
@@ -168,7 +168,7 @@ func HandlerAddFeed(s *State, cmd Command) error {
 	feedArg.UpdatedAt = sql.NullTime{Time: time.Now(), Valid: true}
 	feedArg.Name = sql.NullString{String: cmd.Args[0], Valid: true}
 	feedArg.Url = sql.NullString{String: cmd.Args[1], Valid: true}
-	feedArg.UserID = uuid.NullUUID{UUID: currentUserData.ID, Valid: true}
+	feedArg.UserID = uuid.NullUUID{UUID: user.ID, Valid: true}
 
 	resultFeed, err := s.DataBase.CreateFeed(ctx, feedArg)
 	if err != nil {
@@ -191,7 +191,7 @@ func HandlerAddFeed(s *State, cmd Command) error {
 	feedFollowArg.ID = uuid.New()
 	feedFollowArg.CreatedAt = sql.NullTime{Time: time.Now(), Valid: true}
 	feedFollowArg.UpdatedAt = sql.NullTime{Time: time.Now(), Valid: true}
-	feedFollowArg.UserID = uuid.NullUUID{UUID: currentUserData.ID, Valid: true}
+	feedFollowArg.UserID = uuid.NullUUID{UUID: user.ID, Valid: true}
 	feedFollowArg.FeedID = uuid.NullUUID{UUID: feedArg.ID, Valid: true}
 	result, err := s.DataBase.CreateFeedFollow(ctx, feedFollowArg)
 	if err != nil {
@@ -221,7 +221,7 @@ func HandlerFeeds(s *State, cmd Command) error {
 	return nil
 }
 
-func HandlerFollow(s *State, cmd Command) error {
+func HandlerFollow(s *State, cmd Command, user database.User) error {
 	ctx := context.Background()
 
 	// CHECK URL
@@ -238,12 +238,12 @@ func HandlerFollow(s *State, cmd Command) error {
 
 	// CHECK CURRENT USER
 
-	currentUser := s.ConfigPointer.CurrentUserName
-	currentUserData, err := s.DataBase.GetUser(context.Background(), currentUser)
-	if err != nil {
-		fmt.Println("Current user not exist")
-		os.Exit(1)
-	}
+	// currentUser := s.ConfigPointer.CurrentUserName
+	// currentUserData, err := s.DataBase.GetUser(context.Background(), currentUser)
+	// if err != nil {
+	// 	fmt.Println("Current user not exist")
+	// 	os.Exit(1)
+	// }
 
 	//
 	var feedFollowArg database.CreateFeedFollowParams
@@ -251,7 +251,7 @@ func HandlerFollow(s *State, cmd Command) error {
 	feedFollowArg.ID = uuid.New()
 	feedFollowArg.CreatedAt = sql.NullTime{Time: time.Now(), Valid: true}
 	feedFollowArg.UpdatedAt = sql.NullTime{Time: time.Now(), Valid: true}
-	feedFollowArg.UserID = uuid.NullUUID{UUID: currentUserData.ID, Valid: true}
+	feedFollowArg.UserID = uuid.NullUUID{UUID: user.ID, Valid: true}
 	feedFollowArg.FeedID = uuid.NullUUID{UUID: feed.ID, Valid: true}
 
 	result, err := s.DataBase.CreateFeedFollow(ctx, feedFollowArg)
@@ -264,26 +264,26 @@ func HandlerFollow(s *State, cmd Command) error {
 	return nil
 }
 
-func HandlerFollowing(s *State, cmd Command) error {
+func HandlerFollowing(s *State, cmd Command, user database.User) error {
 	ctx := context.Background()
 
 	// CHECK CURRENT USER
-	currentUser := s.ConfigPointer.CurrentUserName
-	currentUserData, err := s.DataBase.GetUser(context.Background(), currentUser)
-	if err != nil {
-		fmt.Println("Current user not exist")
-		os.Exit(1)
-	}
+	// currentUser := s.ConfigPointer.CurrentUserName
+	// currentUserData, err := s.DataBase.GetUser(context.Background(), currentUser)
+	// if err != nil {
+	// 	fmt.Println("Current user not exist")
+	// 	os.Exit(1)
+	// }
 
 	//
-	result, nil := s.DataBase.GetFeedFollowsForUser(ctx, currentUserData.Name)
+	result, err := s.DataBase.GetFeedFollowsForUser(ctx, user.Name)
 	if err != nil {
 		fmt.Println("Error in Following")
 		os.Exit(1)
 	}
 
 	// PRINT
-	fmt.Printf("Current user (%v) follows:\n", currentUserData.Name)
+	fmt.Printf("Current user (%v) follows:\n", user.Name)
 	for _, feed := range result {
 		fmt.Printf("- %v", feed.Name_2.String)
 	}
@@ -369,4 +369,19 @@ func getConfigFilePath() (string, error) {
 	// fmt.Println("File path:", filePath)
 
 	return filePath, nil
+}
+
+func MiddlewareLoggedIn(handler func(s *State, cmd Command, user database.User) error) func(*State, Command) error {
+	return func(s *State, cmd Command) error {
+
+		currentUser := s.ConfigPointer.CurrentUserName
+		currentUserData, err := s.DataBase.GetUser(context.Background(), currentUser)
+		if err != nil {
+			fmt.Println("Current user not exist")
+			os.Exit(1)
+		}
+
+		return handler(s, cmd, currentUserData)
+
+	}
 }

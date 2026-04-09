@@ -38,10 +38,11 @@ func main() {
 	c.Register("reset", config.HandlerReset)
 	c.Register("users", config.HandlerGetUsers)
 	c.Register("agg", config.HandlerAgg)
-	c.Register("addfeed", config.HandlerAddFeed)
+	// c.Register("addfeed", config.HandlerAddFeed)
+	c.Register("addfeed", config.MiddlewareLoggedIn(config.HandlerAddFeed))
 	c.Register("feeds", config.HandlerFeeds)
-	c.Register("follow", config.HandlerFollow)
-	c.Register("following", config.HandlerFollowing)
+	c.Register("follow", config.MiddlewareLoggedIn(config.HandlerFollow))
+	c.Register("following", config.MiddlewareLoggedIn(config.HandlerFollowing))
 
 	// ACTUAL RUN
 	userArgs := os.Args
