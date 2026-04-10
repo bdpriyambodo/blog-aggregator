@@ -291,6 +291,39 @@ func HandlerFollowing(s *State, cmd Command, user database.User) error {
 	return nil
 }
 
+func HandlerUnfollow(s *State, cmd Command, user database.User) error {
+	ctx := context.Background()
+
+	// CHECK URL
+	url := sql.NullString{
+		String: cmd.Args[0],
+		Valid:  true,
+	}
+	feed, err := s.DataBase.GetFeedUrl(ctx, url)
+
+	if err != nil {
+		fmt.Print("Error in retrieving feed")
+		os.Exit(1)
+	}
+
+	// UNFOLLOW
+
+	var deleteFeedFollowArg database.DeleteFeedFollowParams
+
+	deleteFeedFollowArg.UserID = uuid.NullUUID{UUID: user.ID, Valid: true}
+	deleteFeedFollowArg.FeedID = uuid.NullUUID{UUID: feed.ID, Valid: true}
+
+	err = s.DataBase.DeleteFeedFollow(ctx, deleteFeedFollowArg)
+
+	if err != nil {
+		fmt.Print("Error in unfollowing")
+		os.Exit(1)
+	}
+
+	return nil
+
+}
+
 const configFileName = ".gatorconfig.json"
 
 func Read() *Config {

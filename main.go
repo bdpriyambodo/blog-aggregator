@@ -43,6 +43,7 @@ func main() {
 	c.Register("feeds", config.HandlerFeeds)
 	c.Register("follow", config.MiddlewareLoggedIn(config.HandlerFollow))
 	c.Register("following", config.MiddlewareLoggedIn(config.HandlerFollowing))
+	c.Register("unfollow", config.MiddlewareLoggedIn(config.HandlerUnfollow))
 
 	// ACTUAL RUN
 	userArgs := os.Args
