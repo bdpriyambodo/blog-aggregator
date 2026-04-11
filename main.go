@@ -65,7 +65,7 @@ func main() {
 
 		c.Run(&s, cmd)
 
-	} else if arg1 != "reset" && arg1 != "users" && arg1 != "agg" && arg1 != "feeds" && arg1 != "following" {
+	} else if arg1 != "reset" && arg1 != "users" && arg1 != "feeds" && arg1 != "following" {
 		// FOR COMMANDS THAT NEED ARGUMENT (APART FROM addfeed), NEED 1 COMMAND AND 1 ARGUMENT
 		if len(userArgs) < 2 {
 			fmt.Println("Not enough argument")

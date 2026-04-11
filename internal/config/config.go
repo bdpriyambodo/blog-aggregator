@@ -136,18 +136,55 @@ func HandlerGetUsers(s *State, cmd Command) error {
 	return nil
 }
 
+// func HandlerAgg(s *State, cmd Command) error {
+// 	feedURL := "https://www.wagslane.dev/index.xml"
+// 	ctx := context.Background()
+// 	rss_ptr, err := xmlfetcher.FetchFeed(ctx, feedURL)
+// 	if err != nil {
+// 		fmt.Println("Error in fetching feed: ", err)
+// 		return err
+// 	}
+
+// 	fmt.Printf("%+v\n", rss_ptr)
+
+// 	return nil
+// }
+
 func HandlerAgg(s *State, cmd Command) error {
-	feedURL := "https://www.wagslane.dev/index.xml"
-	ctx := context.Background()
-	rss_ptr, err := xmlfetcher.FetchFeed(ctx, feedURL)
-	if err != nil {
-		fmt.Println("Error in fetching feed: ", err)
-		return err
+	fmt.Println("HandlerAgg called")
+	fmt.Println("args:", cmd.Args)
+	if len(cmd.Args) == 0 {
+		return fmt.Errorf("Empty handlers/argument")
 	}
 
-	fmt.Printf("%+v\n", rss_ptr)
+	time_string := cmd.Args[0]
+
+	fmt.Printf("Collecting feeds every %+v\n", time_string)
+
+	timeBetweenRequests, err := time.ParseDuration(time_string)
+
+	if err != nil {
+		fmt.Print("Error in time parsing")
+		return fmt.Errorf("error parsing duration: %w", err)
+	}
+
+	ticker := time.NewTicker(timeBetweenRequests)
+
+	// for ; ; <-ticker.C {
+	// 	if err := ScrapeFeeds(s); err != nil {
+	// 		fmt.Println("scrape error:", err)
+	// 		return err
+	// 	}
+	// }
+
+	for range ticker.C {
+		if err := ScrapeFeeds(s); err != nil {
+			return err // exits loop
+		}
+	}
 
 	return nil
+
 }
 
 func HandlerAddFeed(s *State, cmd Command, user database.User) error {
@@ -417,4 +454,44 @@ func MiddlewareLoggedIn(handler func(s *State, cmd Command, user database.User) 
 		return handler(s, cmd, currentUserData)
 
 	}
+}
+
+func ScrapeFeeds(s *State) error {
+	ctx := context.Background()
+
+	// GET NEXT FEED
+	nextFeed, err := s.DataBase.GetNextFeedToFetch(ctx)
+	if err != nil {
+		// fmt.Print("Error in getting next feed to fetch")
+		// os.Exit(1)
+		return fmt.Errorf("get next feed: %w", err)
+	}
+
+	// MARK AS FETCHED
+	err = s.DataBase.MarkFeedFetched(ctx, nextFeed.ID)
+	if err != nil {
+		// fmt.Print("Error in marking feed as fetched")
+		// os.Exit(1)
+		return fmt.Errorf("mark fetched: %w", err)
+	}
+
+	// FETCH FEED
+	var nextUrl string
+	if nextFeed.Url.Valid {
+		nextUrl = nextFeed.Url.String
+	} else {
+		// fmt.Println("URL not valid")
+		// os.Exit(1)
+		return fmt.Errorf("invalid URL for feed ID %v", nextFeed.ID)
+	}
+	rss_ptr, err := xmlfetcher.FetchFeed(ctx, nextUrl)
+	if err != nil {
+		// fmt.Println("Error in fetching feed: ", err)
+		return fmt.Errorf("fetch feed: %w", err)
+	}
+
+	// PRINT FEED
+	fmt.Printf("%+v\n", rss_ptr.Channel.Title)
+
+	return nil
 }

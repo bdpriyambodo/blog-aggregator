@@ -24,3 +24,14 @@ SELECT feeds.name, feeds.url, users.name
 from feeds
 left join users 
 on feeds.user_id = users.id;
+
+-- name: MarkFeedFetched :exec
+UPDATE feeds 
+SET last_fetched_at = NOW(), updated_at = NOW()
+where id = $1;
+
+-- name: GetNextFeedToFetch :one
+SELECT id, url FROM feeds
+ORDER BY last_fetched_at asc NULLS first
+LIMIT 1
+;
